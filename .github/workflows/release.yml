@@ -1,0 +1,38 @@
+name: Release Charts
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Run chart-releaser local
+        run: |
+          install="$RUNNER_TOOL_CACHE/cr/${{ inputs.version }}/$(uname -m)"
+          echo "$install" >> "$GITHUB_PATH"
+          owner=$(cut -d '/' -f 1 <<< "$GITHUB_REPOSITORY")
+          repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
+          ./cr.sh -o $owner -d . --repo $repo -n ./ --install-dir "$install"
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      ## Only works if charts are in a subdirectory
+      # - name: Run chart-releaser
+      #   uses: helm/chart-releaser-action@v1.1.0
+      #   with:
+      #     charts_dir: "charts"
+      #   env:
+      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
